@@ -3,3 +3,4 @@ venv
 .json
 app/tg.py
 *.ipynb
+*.pyc
