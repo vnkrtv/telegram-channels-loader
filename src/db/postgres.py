@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, Optional, List
 
 import psycopg2
 
@@ -27,9 +27,9 @@ class PostgresStorage:
             host=host, port=port, user=user, password=password, dbname=dbname)
         )
 
-    def exec_query(self, query: str, params: list) -> Generator:
+    def exec_query(self, sql: str, params: list) -> Generator:
         cursor = self.conn.cursor()
-        cursor.execute(query, params)
+        cursor.execute(sql, params)
         return cursor.fetchall()
 
     def exec(self, sql: str, params: list):
@@ -67,42 +67,59 @@ class TelegramStorage(PostgresStorage):
     def add_message(self, message: Message):
         sql = '''
             INSERT INTO 
-                tiktoks (tiktok_id, create_time, description, author_id, video_id, music_id, 
-                          digg_count, share_count, comment_count, play_count, is_ad) 
+                tiktoks (message_id, channel_id, date, text, views_count, author, is_post) 
             VALUES 
-                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (tiktok_id)
+                (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (message_id)
                 DO UPDATE SET
-                    digg_count = EXCLUDED.digg_count,
-                    share_count = EXCLUDED.share_count,
-                    comment_count = EXCLUDED.comment_count,
-                    play_count = EXCLUDED.play_count'''
+                    text = EXCLUDED.text,
+                    views_count = EXCLUDED.views_count'''
         self.exec(sql=sql, params=message.db_params)
 
     def __get_all(self, table_name: str, count: int = 0) -> Generator:
         sql = f'SELECT * FROM {table_name}'
         if count != 0:
             sql += f' LIMIT {count}'
-        return self.exec(sql=sql, params=[])
+        return self.exec_query(sql=sql, params=[])
 
-    def get_all_tiktokers(self, count: int = 0) -> Generator:
-        return self.__get_all(table_name='tiktokers', count=count)
+    def get_all_channels(self, count: int = 0) -> Generator:
+        return self.__get_all(table_name='channels', count=count)
 
-    def get_all_tiktoks(self, count: int = 0) -> Generator:
-        return self.__get_all(table_name='tiktoks', count=count)
+    def get_all_messages(self, count: int = 0) -> Generator:
+        return self.__get_all(table_name='messages', count=count)
 
-    def get_ticktoker(self, ticktoker_id: int = None, nickname: str = None) -> tuple:
-        sql = f'SELECT * FROM tiktokers'
-        if ticktoker_id:
-            sql += f' WHERE tiktoker_id={ticktoker_id}'
-        elif nickname:
-            sql += f' WHERE nickname={nickname}'
-        return next(self.exec(sql=sql, params=[]))
+    def get_channel(self, channel_id: int) -> Optional[Channel, None]:
+        sql = 'SELECT * FROM channels WHERE channel_id=%s'
+        row = next(self.exec_query(sql=sql, params=[channel_id]))
+        if not row:
+            return None
+        channel = Channel(
+            channel_id=channel_id,
+            name=row[1],
+            link=row[2],
+            description=row[3],
+            subscribers_count=row[4])
+        return channel
 
-    def get_ticktoks(self, ticktok_id: int = None, author_id: int = None) -> Generator:
-        sql = f'SELECT * FROM tiktoks'
-        if ticktok_id:
-            sql += f' WHERE tiktok_id={ticktok_id}'
-        elif author_id:
-            sql += f' WHERE author_id={author_id}'
-        return self.exec(sql=sql, params=[])
+    def get_messages(self, channel_id: int = 0, message_ids: List[int] = None) -> List[Message]:
+        sql = f'SELECT * FROM messages'
+        params = []
+        if channel_id:
+            sql += ' WHERE channel_id=%s'
+            params = [channel_id]
+        elif message_ids:
+            sql += ' WHERE message_id IN %s'
+            params = [tuple(message_ids)]
+        messages = []
+        for row in self.exec_query(sql=sql, params=params):
+            message = Message(
+                message_id=row[0],
+                channel_id=row[1],
+                date=row[2],
+                description=row[3],
+                text=row[4],
+                views_count=row[5],
+                author=row[6],
+                is_post=row[7])
+            messages.append(message)
+        return messages

@@ -20,7 +20,6 @@ CREATE TABLE IF NOT EXISTS messages
     channel_id  int8,
     date        timestamp
         not null,
-    description text,
     text        text,
     views_count int8,
     author      text,

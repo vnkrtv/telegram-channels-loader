@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 
@@ -31,31 +31,28 @@ class Message:
     message_id: int
     is_post: bool
     date: datetime
-    description: str
     views_count: int
-    author: str
+    author: Optional[str, None]
     text: str
-    channel: Channel
+    channel_id: int
 
     def __init__(self,
                  message_id: int,
                  is_post: bool,
                  date: datetime,
-                 description: str,
                  views_count: int,
-                 author: str,
+                 author: Optional[str, None],
                  text: str,
-                 channel: Channel):
+                 channel_id: int):
         self.message_id = message_id
         self.is_post = is_post
         self.date = date
-        self.description = description
         self.views_count = views_count
         self.author = author
         self.text = text
-        self.channel = channel
+        self.channel_id = channel_id
 
     @property
-    def db_params(self) -> List[str]:
-        return [self.message_id, self.channel.channel_id, self.date,
-                self.description, self.text, self.views_count, self.author, self.is_post]
+    def db_params(self) -> List[Optional[str, None]]:
+        return [self.message_id, self.channel_id, self.date,
+                self.text, self.views_count, self.author, self.is_post]
