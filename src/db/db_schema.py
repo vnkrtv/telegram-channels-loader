@@ -1,4 +1,4 @@
-DB_SCHEMA = '''
+DB_SCHEMA_LIST = ['''
 CREATE TABLE IF NOT EXISTS channels
 (
     channel_id    int8,
@@ -12,8 +12,7 @@ CREATE TABLE IF NOT EXISTS channels
     subscribers_count  int8
         not null,
     constraint pk_channels primary key (channel_id)
-);
-
+);''', '''
 CREATE TABLE IF NOT EXISTS messages
 (
     message_id  int8,
@@ -31,5 +30,4 @@ CREATE TABLE IF NOT EXISTS messages
         references channels (channel_id)
         on delete set null
         on update cascade
-);
-'''
+);''']

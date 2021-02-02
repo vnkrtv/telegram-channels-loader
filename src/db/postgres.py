@@ -1,8 +1,9 @@
-from typing import Generator, Optional, List
+from typing import Generator, Optional, List, Any, Tuple, Type
+import asyncio
 
-import psycopg2
+import asyncpg
 
-from .db_schema import DB_SCHEMA
+from .db_schema import DB_SCHEMA_LIST
 from .models import Channel, Message
 
 
@@ -11,35 +12,33 @@ class PostgresStorage:
     Base class for working with PostgreSQL
     """
 
-    conn: psycopg2.extensions.connection
+    pool: asyncpg.pool.Pool
 
-    def __init__(self, conn):
-        self.conn = conn
-
-    @classmethod
-    def connect(cls,
-                host: str,
-                port: int = 5432,
-                user: str = 'postgres',
-                password: str = 'password',
-                dbname: str = 'postgres'):
-        return cls(conn=psycopg2.connect(
-            host=host, port=port, user=user, password=password, dbname=dbname)
-        )
-
-    def exec_query(self, sql: str, params: list) -> Generator:
-        cursor = self.conn.cursor()
-        cursor.execute(sql, params)
-        return cursor.fetchall()
-
-    def exec(self, sql: str, params: list):
-        cursor = self.conn.cursor()
+    def __init__(self,
+                 host: str,
+                 port: int = 5432,
+                 user: str = 'postgres',
+                 password: str = 'password',
+                 dbname: str = 'postgres'):
+        uri = f'postgresql://{user}:{password}@{host}:{port}/{dbname}'
         try:
-            cursor.execute(sql, params)
-        except psycopg2.Error as e:
-            self.conn.rollback()
-            raise e
-        self.conn.commit()
+            loop = asyncio.get_running_loop()
+        except RuntimeError:  # no event loop running:
+            loop = asyncio.new_event_loop()
+        self.pool = loop.run_until_complete(asyncpg.create_pool(dsn=uri))
+
+    async def exec_query(self, sql: str, params: List[Any]) -> List[Tuple]:
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(sql, params)
+            return rows
+
+    async def exec(self, sql: str, params: List[Any]):
+        async with self.pool.acquire() as conn:
+            await conn.execute(sql, params)
+
+    async def exec_ddl(self, sql: str):
+        async with self.pool.acquire() as conn:
+            await conn.execute(sql)
 
 
 class TelegramStorage(PostgresStorage):
@@ -47,10 +46,11 @@ class TelegramStorage(PostgresStorage):
     Class for working with Telegram
     """
 
-    def create_schema(self):
-        self.exec(sql=DB_SCHEMA, params=[])
+    async def create_schema(self):
+        for table_sql in DB_SCHEMA_LIST:
+            await self.exec_ddl(sql=table_sql)
 
-    def add_channel(self, channel: Channel):
+    async def add_channel(self, channel: Channel):
         sql = '''
             INSERT INTO 
                 channels (channel_id, name, link, description, subscribers_count) 
@@ -62,9 +62,9 @@ class TelegramStorage(PostgresStorage):
                     link = EXCLUDED.link,
                     description=EXCLUDED.description,
                     subscribers_count=EXCLUDED.subscribers_count'''
-        self.exec(sql=sql, params=channel.db_params)
+        await self.exec(sql=sql, params=channel.db_params)
 
-    def add_message(self, message: Message):
+    async def add_message(self, message: Message):
         sql = '''
             INSERT INTO 
                 tiktoks (message_id, channel_id, date, text, views_count, author, is_post) 
@@ -74,25 +74,14 @@ class TelegramStorage(PostgresStorage):
                 DO UPDATE SET
                     text = EXCLUDED.text,
                     views_count = EXCLUDED.views_count'''
-        self.exec(sql=sql, params=message.db_params)
+        await self.exec(sql=sql, params=message.db_params)
 
-    def __get_all(self, table_name: str, count: int = 0) -> Generator:
-        sql = f'SELECT * FROM {table_name}'
-        if count != 0:
-            sql += f' LIMIT {count}'
-        return self.exec_query(sql=sql, params=[])
-
-    def get_all_channels(self, count: int = 0) -> Generator:
-        return self.__get_all(table_name='channels', count=count)
-
-    def get_all_messages(self, count: int = 0) -> Generator:
-        return self.__get_all(table_name='messages', count=count)
-
-    def get_channel(self, channel_id: int) -> Optional[Channel, None]:
+    async def get_channel(self, channel_id: int) -> Any:
         sql = 'SELECT * FROM channels WHERE channel_id=%s'
-        row = next(self.exec_query(sql=sql, params=[channel_id]))
+        row = await self.exec_query(sql=sql, params=[channel_id])
         if not row:
             return None
+        row = row[0]
         channel = Channel(
             channel_id=channel_id,
             name=row[1],
@@ -101,7 +90,7 @@ class TelegramStorage(PostgresStorage):
             subscribers_count=row[4])
         return channel
 
-    def get_messages(self, channel_id: int = 0, message_ids: List[int] = None) -> List[Message]:
+    async def get_messages(self, channel_id: int = 0, message_ids: list = None) -> list:
         sql = f'SELECT * FROM messages'
         params = []
         if channel_id:
@@ -111,15 +100,14 @@ class TelegramStorage(PostgresStorage):
             sql += ' WHERE message_id IN %s'
             params = [tuple(message_ids)]
         messages = []
-        for row in self.exec_query(sql=sql, params=params):
+        for row in await self.exec_query(sql=sql, params=params):
             message = Message(
                 message_id=row[0],
                 channel_id=row[1],
                 date=row[2],
-                description=row[3],
-                text=row[4],
-                views_count=row[5],
-                author=row[6],
-                is_post=row[7])
+                text=row[3],
+                views_count=row[4],
+                author=row[5],
+                is_post=row[6])
             messages.append(message)
         return messages

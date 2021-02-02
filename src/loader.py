@@ -1,13 +1,9 @@
 import asyncio
-import json
-import os
 from typing import List
 
 from telethon.sync import TelegramClient
-from telethon import connection
-
-# для корректного переноса времени сообщений в json
-from datetime import date, datetime
+from telethon import events
+from telethon import types
 
 # классы для работы с каналами
 from telethon.tl.functions.channels import GetParticipantsRequest
@@ -22,58 +18,37 @@ from .db import TelegramStorage, Channel, Message
 class TelegramLoader:
 
     client: TelegramClient
-    storage: TelegramStorage
-    channels: list
+    db: TelegramStorage
+    channels: List[Channel]
+    timeout: float
 
-    def __init__(self, client: TelegramClient, storage: TelegramStorage):
-        self.storage = storage
+    def __init__(self, client: TelegramClient, db: TelegramStorage, timeout: float):
+        self.db = db
+        self.timeout = timeout
         self.client = client
         self.client.start()
 
+    async def start_client(self):
+        await self.client.run_until_disconnected()
+
     @classmethod
-    def create(cls, storage: TelegramStorage, api_id: int, api_hash: str):
+    def create(cls, db: TelegramStorage, api_id: int, api_hash: str, timeout: float):
         client = TelegramClient(None, api_id, api_hash)
-        return cls(client=client, storage=storage)
+        return cls(client=client, db=db, timeout=timeout)
 
     async def add_channels(self, channels_urls: List[str]):
         for channel_url in channels_urls:
-            channel = await self.client.get_entity(channel_url)
+            tg_channel = await self.client.get_entity(channel_url)
+            channel = Channel.from_dict(tg_channel.to_dict())
+            await self.db.add_channel(channel)
             self.channels.append(channel)
 
-    async def start_loading(self):
-        with self.client:
-            self.client.loop.run_until_complete(main())
-
-    async def dump_all_participants(self, channel):
-        offset_user = 0    # номер участника, с которого начинается считывание
-        limit_user = 100   # максимальное число записей, передаваемых за один раз
-
-        all_participants = []   # список всех участников канала
-        filter_user = ChannelParticipantsSearch('')
-
+    async def start_loading(self, total_count_limit: int):
         while True:
-            participants = await self.client(GetParticipantsRequest(channel,
-                filter_user, offset_user, limit_user, hash=0))
-            if not participants.users:
-                break
-            all_participants.extend(participants.users)
-            offset_user += len(participants.users)
+            await self.load_all_channels_messages(total_count_limit)
+            await asyncio.sleep(self.timeout)
 
-        all_users_details = []   # список словарей с интересующими параметрами участников канала
-
-        for participant in all_participants:
-            all_users_details.append({"id": participant.id,
-                "first_name": participant.first_name,
-                "last_name": participant.last_name,
-                "user": participant.username,
-                "phone": participant.phone,
-                "is_bot": participant.bot})
-
-        with open('channel_users.json', 'w', encoding='utf8') as outfile:
-            json.dump(all_users_details, outfile, ensure_ascii=False)
-
-
-    async def dump_all_messages(self, channel: Channel, total_count_limit: int = 500):
+    async def load_channel_messages(self, channel: Channel, total_count_limit: int):
         offset_msg = 0    # номер записи, с которой начинается считывание
         limit_msg = 100   # максимальное число записей, передаваемых за один раз
 
@@ -95,14 +70,10 @@ class TelegramLoader:
             total_messages = len(all_messages)
             if total_count_limit != 0 and total_messages >= total_count_limit:
                 break
+        for message_dict in all_messages:
+            message = Message.from_dict(message_dict, channel.channel_id)
+            await self.db.add_message(message)
 
-        for message_json in all_messages:
-            message = Message(
-                message_id=message_json['id'],
-                is_post=message_json['post'],
-                text=message_json['message'],
-                views_count=message_json['views'],
-                date=datetime.fromisoformat(message_json['date']),
-                channel_id=channel.channel_id,
-                author=message_json['post_author'])
-            self.storage.add_message(message)
+    async def load_all_channels_messages(self, total_count_limit: int):
+        for channel in self.channels:
+            await self.load_channel_messages(channel, total_count_limit)

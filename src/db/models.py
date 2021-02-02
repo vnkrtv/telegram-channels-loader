@@ -1,9 +1,8 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Union, AnyStr
 from datetime import datetime
 
 
 class Channel:
-
     channel_id: int
     name: str
     link: str
@@ -22,17 +21,25 @@ class Channel:
         self.subscribers_count = subscribers_count
 
     @property
-    def db_params(self) -> List[str]:
+    def db_params(self) -> List[AnyStr]:
         return [self.channel_id, self.name, self.name, self.link, self.description, self.subscribers_count]
+
+    @classmethod
+    def from_dict(cls, channel_dict: Dict[AnyStr, Any]):
+        return cls(
+            channel_id=channel_dict['id'],
+            name=channel_dict['name'],
+            link=channel_dict['link'],
+            description=channel_dict['description'],
+            subscribers_count=channel_dict['subscribers'])
 
 
 class Message:
-
     message_id: int
     is_post: bool
     date: datetime
     views_count: int
-    author: Optional[str, None]
+    author: Any
     text: str
     channel_id: int
 
@@ -41,7 +48,7 @@ class Message:
                  is_post: bool,
                  date: datetime,
                  views_count: int,
-                 author: Optional[str, None],
+                 author: Any,
                  text: str,
                  channel_id: int):
         self.message_id = message_id
@@ -53,6 +60,17 @@ class Message:
         self.channel_id = channel_id
 
     @property
-    def db_params(self) -> List[Optional[str, None]]:
+    def db_params(self) -> List[Any]:
         return [self.message_id, self.channel_id, self.date,
                 self.text, self.views_count, self.author, self.is_post]
+
+    @classmethod
+    def from_dict(cls, message_dict: Dict[AnyStr, Any], channel_id: int):
+        return cls(
+            message_id=message_dict['id'],
+            is_post=message_dict['post'],
+            text=message_dict['message'],
+            views_count=message_dict['views'],
+            date=datetime.fromisoformat(message_dict['date']),
+            channel_id=channel_id,
+            author=message_dict['post_author'])

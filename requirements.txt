@@ -1,4 +1,4 @@
-psycopg2-binary==2.8.6
+asyncpg==0.21.0
 pyaes==1.6.1
 pyasn1==0.4.8
 rsa==4.7
