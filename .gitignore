@@ -1,6 +1,5 @@
 venv
 .idea
-.json
-app/tg.py
+*.json
 *.ipynb
 *.pyc
