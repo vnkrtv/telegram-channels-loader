@@ -1,5 +1,5 @@
 # telegram-channels-loader
-
+[![Build Status](https://travis-ci.com/vnkrtv/telegram-channels-loader.svg?branch=main)](https://travis-ci.com/vnkrtv/telegram-channels-loader)
 ## Description
 
 Service providing loading messages from telegram channels to PostgreSQL DB.
