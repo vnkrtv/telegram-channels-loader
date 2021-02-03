@@ -2,14 +2,7 @@ import asyncio
 from typing import List
 
 from telethon import TelegramClient
-from telethon import events
-from telethon import types
-
-# классы для работы с каналами
-from telethon.tl.functions.channels import GetParticipantsRequest, GetFullChannelRequest
-from telethon.tl.types import ChannelParticipantsSearch
-
-# класс для работы с сообщениями
+from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.messages import GetHistoryRequest
 
 from .db import TelegramStorage, Channel, Message

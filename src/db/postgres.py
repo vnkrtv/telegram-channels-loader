@@ -1,4 +1,4 @@
-from typing import Generator, Optional, List, Any, Tuple, Type
+from typing import List, Any, Tuple
 import asyncio
 
 import asyncpg
@@ -23,7 +23,7 @@ class PostgresStorage:
         uri = f'postgresql://{user}:{password}@{host}:{port}/{dbname}'
         try:
             loop = asyncio.get_running_loop()
-        except RuntimeError:  # no event loop running:
+        except RuntimeError:
             loop = asyncio.new_event_loop()
         self.pool = loop.run_until_complete(asyncpg.create_pool(dsn=uri))
 

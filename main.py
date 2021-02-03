@@ -6,8 +6,7 @@ import nest_asyncio
 
 from src import TelegramLoader, TelegramStorage
 
-SESSION_NAME = os.getenv('SESSION_NAME', '')
-TG_USERNAME = os.getenv('TG_USERNAME', '')
+SESSION_NAME = os.getenv('SESSION_NAME', 'tg_grabber')
 API_ID = int(os.getenv('API_ID', 0))
 API_HASH = os.getenv('API_HASH', '')
 PG_HOST = os.getenv('PG_HOST', '172.17.0.2')
