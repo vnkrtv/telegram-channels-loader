@@ -1,4 +1,5 @@
 from typing import List, Any, Tuple
+import logging
 import asyncio
 
 import asyncpg
@@ -26,6 +27,7 @@ class PostgresStorage:
         except RuntimeError:
             loop = asyncio.new_event_loop()
         self.pool = loop.run_until_complete(asyncpg.create_pool(dsn=uri))
+        logging.info('Opened connection pool to PostgreSQL DB(%s)' % uri)
 
     async def exec_query(self, sql: str, params: List[Any]) -> List[Tuple]:
         async with self.pool.acquire() as conn:
@@ -48,13 +50,14 @@ class TelegramStorage(PostgresStorage):
 
     async def create_schema(self):
         await self.exec_ddl(sql=DB_SCHEMA)
+        logging.info('Created DB schema')
 
     async def add_channel(self, channel: Channel):
         sql = '''
             INSERT INTO 
-                channels (channel_id, name, link, description, subscribers_count) 
+                channels (channel_id, name, link, description, subscribers_count, type) 
             VALUES 
-                ($1, $2, $3, $4, $5)
+                ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (channel_id)
                 DO UPDATE SET
                     name = EXCLUDED.name,

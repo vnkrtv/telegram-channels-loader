@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import List
 
 from telethon import TelegramClient
@@ -42,6 +43,7 @@ class TelegramLoader:
                                         channel_dict=tg_channel.full_chat.to_dict(),
                                         link=channel_url)
             await self.db.add_channel(channel)
+            logging.info('Loaded %s(%s) channel info' % (channel.name, channel.link))
             self.channels.append(channel)
 
     async def start_loading(self, total_count_limit: int):
@@ -77,6 +79,7 @@ class TelegramLoader:
         for message_dict in all_messages:
             message = Message.from_dict(message_dict, channel.channel_id)
             await self.db.add_message(message)
+        logging.info('Loaded %d messages from %s(%s) channel' % (len(all_messages), channel.name, channel.link))
 
     async def load_all_channels_messages(self, total_count_limit: int):
         for channel in self.channels:

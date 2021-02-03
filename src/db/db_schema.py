@@ -1,15 +1,17 @@
 DB_SCHEMA = '''
 CREATE TABLE IF NOT EXISTS channels
 (
-    channel_id    int8,
-    name         text
+    channel_id        int8,
+    name              text
         unique
         not null,
-    link       text
+    link              text
         not null,
-    description        text
+    description       text
         not null,
-    subscribers_count  int8
+    subscribers_count int8
+        not null,
+    type              text
         not null,
     constraint pk_channels primary key (channel_id)
 );

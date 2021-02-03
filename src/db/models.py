@@ -8,30 +8,34 @@ class Channel:
     link: str
     description: str
     subscribers_count: int
+    channel_type: str
 
     def __init__(self, channel_id: int,
                  name: str,
                  link: str,
                  description: str,
-                 subscribers_count: int):
+                 subscribers_count: int,
+                 channel_type: str):
         self.channel_id = channel_id
         self.name = name
         self.link = link
         self.description = description
         self.subscribers_count = subscribers_count
+        self.channel_type = channel_type
 
     @property
     def db_params(self) -> List[AnyStr]:
-        return [self.channel_id, self.name, self.link, self.description, self.subscribers_count]
+        return [self.channel_id, self.name, self.link, self.description, self.subscribers_count, self.channel_type]
 
     @classmethod
-    def from_dict(cls, name: str, channel_dict: Dict[AnyStr, Any], link: str):
+    def from_dict(cls, name: str, channel_dict: Dict[AnyStr, Any], link: str, channel_type: str):
         return cls(
             channel_id=channel_dict['id'],
             name=name,
             link=link,
             description=channel_dict['about'],
-            subscribers_count=channel_dict['participants_count'])
+            subscribers_count=channel_dict['participants_count'],
+            channel_type=channel_type)
 
 
 class Message:
