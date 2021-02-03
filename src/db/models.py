@@ -71,6 +71,6 @@ class Message:
             is_post=message_dict['post'],
             text=message_dict['message'],
             views_count=message_dict['views'],
-            date=datetime.fromisoformat(message_dict['date']),
+            date=datetime.strptime(str(message_dict['date'])[:-6], "%Y-%m-%d %H:%M:%S"),
             channel_id=channel_id,
             author=message_dict['post_author'])

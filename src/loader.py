@@ -1,7 +1,7 @@
 import asyncio
 from typing import List
 
-from telethon.sync import TelegramClient
+from telethon import TelegramClient
 from telethon import events
 from telethon import types
 

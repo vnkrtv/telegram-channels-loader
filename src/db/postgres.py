@@ -66,7 +66,7 @@ class TelegramStorage(PostgresStorage):
     async def add_message(self, message: Message):
         sql = '''
             INSERT INTO 
-                tiktoks (message_id, channel_id, date, text, views_count, author, is_post) 
+                messages (message_id, channel_id, date, text, views_count, author, is_post) 
             VALUES 
                 ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (message_id)
