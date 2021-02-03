@@ -1,13 +1,14 @@
 from typing import List
 import json
 import logging
+import pathlib
 
 import requests
 from bs4 import BeautifulSoup
 
 BASE_URL = 'https://tlgrm.ru/channels/'
-CHANNELS_URLS_FILE = 'channels.json'
-CHANNELS_TYPES_FILE = 'channels_types.json'
+CHANNELS_URLS_FILE = pathlib.Path(__file__).parent.parent.absolute() + 'channels.json'
+CHANNELS_TYPES_FILE = pathlib.Path(__file__).parent.parent.absolute() + 'channels_types.json'
 
 
 class ChannelType:
@@ -83,8 +84,10 @@ def load_channels_by_types(types_list: List[str]) -> List[dict]:
 def get_channels(custom_channels: bool) -> List[dict]:
     if custom_channels:
         with open(CHANNELS_URLS_FILE, 'r') as f:
-            return json.load(f)
+            channels = json.load(f)
     else:
         with open(CHANNELS_TYPES_FILE, 'r') as f:
             types_list = json.load(f)
-        return load_channels_by_types(types_list)
+        channels = load_channels_by_types(types_list)
+    logging.info('Got %d channels' % len(channels))
+    return channels
