@@ -1,4 +1,7 @@
 venv
 .idea
+.ipynb_checkpoints
+
 *.pyc
 *.session
+*.ipynb

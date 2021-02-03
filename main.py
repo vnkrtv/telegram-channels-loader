@@ -4,7 +4,7 @@ import asyncio
 
 import nest_asyncio
 
-from src import TelegramLoader, TelegramStorage
+from src import TelegramLoader, TelegramStorage, get_channels
 
 SESSION_NAME = os.getenv('SESSION_NAME', 'tg_grabber')
 API_ID = int(os.getenv('API_ID', 0))
@@ -15,13 +15,12 @@ PG_NAME = os.getenv('PG_NAME', 'telegram')
 PG_USER = os.getenv('PG_USER', 'vnkrtv')
 PG_PASS = os.getenv('PG_PASS', 'password')
 TIMEOUT = float(os.getenv('TIMEOUT', 60 * 60))
-CHANNELS_FILE = os.getenv('CHANNELS_FILE', './channels.json')
-MESSAGES_LIMIT = int(os.getenv('MESSAGES_LIMIT', 500))
+MESSAGES_LIMIT = int(os.getenv('MESSAGES_LIMIT', 1000))
+CUSTOM_CHANNELS_URLS = bool(os.getenv('CUSTOM_CHANNELS_URLS'))
 
 
 async def main():
-    with open(CHANNELS_FILE, 'r') as f:
-        channels_urls = json.load(f)
+    channels = get_channels(CUSTOM_CHANNELS_URLS)
 
     db = TelegramStorage(host=PG_HOST,
                          port=PG_PORT,
@@ -36,7 +35,7 @@ async def main():
                             api_hash=API_HASH,
                             timeout=TIMEOUT)
     await loader.run_client()
-    await loader.add_channels(channels_urls)
+    await loader.add_channels(channels)
     await loader.start_loading(total_count_limit=MESSAGES_LIMIT)
 
 

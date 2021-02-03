@@ -89,7 +89,8 @@ class TelegramStorage(PostgresStorage):
             name=row[1],
             link=row[2],
             description=row[3],
-            subscribers_count=row[4])
+            subscribers_count=row[4],
+            channel_type=row[5])
         return channel
 
     async def get_messages(self, channel_id: int = 0, message_ids: list = None) -> list:

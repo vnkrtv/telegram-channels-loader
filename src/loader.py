@@ -30,18 +30,19 @@ class TelegramLoader:
     async def run_client(self):
         await self.client.start()
 
-    async def add_channels(self, channels_urls: List[str]):
-        self.client.loop.run_until_complete(self.__add_channels(channels_urls))
+    async def add_channels(self, channels: List[str]):
+        self.client.loop.run_until_complete(self.__add_channels(channels))
 
-    async def __add_channels(self, channels_urls: List[str]):
-        for channel_url in channels_urls:
-            channel_entity = await self.client.get_entity(channel_url)
+    async def __add_channels(self, channels: List[dict]):
+        for channel_dict in channels:
+            channel_entity = await self.client.get_entity(channel_dict['link'])
             tg_channel = await self.client(GetFullChannelRequest(
                 channel=channel_entity
             ))
             channel = Channel.from_dict(name=channel_entity.to_dict()['title'],
                                         channel_dict=tg_channel.full_chat.to_dict(),
-                                        link=channel_url)
+                                        link=channel_dict['link'],
+                                        channel_type=channel_dict['type'])
             await self.db.add_channel(channel)
             logging.info('Loaded %s(%s) channel info' % (channel.name, channel.link))
             self.channels.append(channel)

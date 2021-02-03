@@ -1,4 +1,10 @@
 [
-  "https://t.me/breakingmash",
-  "https://t.me/russica2"
+  {
+    "link": "https://t.me/breakingmash",
+    "type": "news"
+  },
+  {
+    "link": "https://t.me/russica2",
+    "type": "politics economics"
+  }
 ]
