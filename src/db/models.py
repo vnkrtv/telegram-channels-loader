@@ -22,16 +22,16 @@ class Channel:
 
     @property
     def db_params(self) -> List[AnyStr]:
-        return [self.channel_id, self.name, self.name, self.link, self.description, self.subscribers_count]
+        return [self.channel_id, self.name, self.link, self.description, self.subscribers_count]
 
     @classmethod
-    def from_dict(cls, channel_dict: Dict[AnyStr, Any]):
+    def from_dict(cls, name: str, channel_dict: Dict[AnyStr, Any], link: str):
         return cls(
             channel_id=channel_dict['id'],
-            name=channel_dict['name'],
-            link=channel_dict['link'],
-            description=channel_dict['description'],
-            subscribers_count=channel_dict['subscribers'])
+            name=name,
+            link=link,
+            description=channel_dict['about'],
+            subscribers_count=channel_dict['participants_count'])
 
 
 class Message:

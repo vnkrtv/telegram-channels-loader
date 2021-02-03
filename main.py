@@ -6,6 +6,7 @@ import nest_asyncio
 
 from src import TelegramLoader, TelegramStorage
 
+SESSION_NAME = os.getenv('SESSION_NAME', '')
 TG_USERNAME = os.getenv('TG_USERNAME', '')
 API_ID = int(os.getenv('API_ID', 0))
 API_HASH = os.getenv('API_HASH', '')
@@ -30,8 +31,12 @@ async def main():
                          password=PG_PASS)
     await db.create_schema()
 
-    loader = TelegramLoader.create(db=db, api_id=API_ID, api_hash=API_HASH, timeout=TIMEOUT)
-    await loader.start_client()
+    loader = TelegramLoader(db=db,
+                            session_name=SESSION_NAME,
+                            api_id=API_ID,
+                            api_hash=API_HASH,
+                            timeout=TIMEOUT)
+    await loader.run_client()
     await loader.add_channels(channels_urls)
     await loader.start_loading(total_count_limit=MESSAGES_LIMIT)
 

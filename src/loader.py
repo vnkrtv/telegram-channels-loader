@@ -6,7 +6,7 @@ from telethon import events
 from telethon import types
 
 # классы для работы с каналами
-from telethon.tl.functions.channels import GetParticipantsRequest
+from telethon.tl.functions.channels import GetParticipantsRequest, GetFullChannelRequest
 from telethon.tl.types import ChannelParticipantsSearch
 
 # класс для работы с сообщениями
@@ -22,28 +22,39 @@ class TelegramLoader:
     channels: List[Channel]
     timeout: float
 
-    def __init__(self, client: TelegramClient, db: TelegramStorage, timeout: float):
+    def __init__(self,
+                 db: TelegramStorage,
+                 session_name: str,
+                 api_id: int,
+                 api_hash: str,
+                 timeout: float):
         self.db = db
         self.timeout = timeout
-        self.client = client
-        self.client.start()
+        self.client = TelegramClient(session_name, api_id, api_hash)
+        self.channels = []
 
-    async def start_client(self):
-        await self.client.run_until_disconnected()
-
-    @classmethod
-    def create(cls, db: TelegramStorage, api_id: int, api_hash: str, timeout: float):
-        client = TelegramClient(None, api_id, api_hash)
-        return cls(client=client, db=db, timeout=timeout)
+    async def run_client(self):
+        await self.client.start()
 
     async def add_channels(self, channels_urls: List[str]):
+        self.client.loop.run_until_complete(self.__add_channels(channels_urls))
+
+    async def __add_channels(self, channels_urls: List[str]):
         for channel_url in channels_urls:
-            tg_channel = await self.client.get_entity(channel_url)
-            channel = Channel.from_dict(tg_channel.to_dict())
+            channel_entity = await self.client.get_entity(channel_url)
+            tg_channel = await self.client(GetFullChannelRequest(
+                channel=channel_entity
+            ))
+            channel = Channel.from_dict(name=channel_entity.to_dict()['title'],
+                                        channel_dict=tg_channel.full_chat.to_dict(),
+                                        link=channel_url)
             await self.db.add_channel(channel)
             self.channels.append(channel)
 
     async def start_loading(self, total_count_limit: int):
+        self.client.loop.run_until_complete(self.__start_loading(total_count_limit=total_count_limit))
+
+    async def __start_loading(self, total_count_limit: int):
         while True:
             await self.load_all_channels_messages(total_count_limit)
             await asyncio.sleep(self.timeout)

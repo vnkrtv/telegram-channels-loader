@@ -3,7 +3,7 @@ import asyncio
 
 import asyncpg
 
-from .db_schema import DB_SCHEMA_LIST
+from .db_schema import DB_SCHEMA
 from .models import Channel, Message
 
 
@@ -29,12 +29,12 @@ class PostgresStorage:
 
     async def exec_query(self, sql: str, params: List[Any]) -> List[Tuple]:
         async with self.pool.acquire() as conn:
-            rows = await conn.fetch(sql, params)
+            rows = await conn.fetch(sql, *params)
             return rows
 
     async def exec(self, sql: str, params: List[Any]):
         async with self.pool.acquire() as conn:
-            await conn.execute(sql, params)
+            await conn.execute(sql, *params)
 
     async def exec_ddl(self, sql: str):
         async with self.pool.acquire() as conn:
@@ -47,15 +47,14 @@ class TelegramStorage(PostgresStorage):
     """
 
     async def create_schema(self):
-        for table_sql in DB_SCHEMA_LIST:
-            await self.exec_ddl(sql=table_sql)
+        await self.exec_ddl(sql=DB_SCHEMA)
 
     async def add_channel(self, channel: Channel):
         sql = '''
             INSERT INTO 
                 channels (channel_id, name, link, description, subscribers_count) 
             VALUES 
-                (%s, %s, %s, %s, %s)
+                ($1, $2, $3, $4, $5)
             ON CONFLICT (channel_id)
                 DO UPDATE SET
                     name = EXCLUDED.name,
@@ -69,7 +68,7 @@ class TelegramStorage(PostgresStorage):
             INSERT INTO 
                 tiktoks (message_id, channel_id, date, text, views_count, author, is_post) 
             VALUES 
-                (%s, %s, %s, %s, %s, %s, %s)
+                ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (message_id)
                 DO UPDATE SET
                     text = EXCLUDED.text,
@@ -77,7 +76,7 @@ class TelegramStorage(PostgresStorage):
         await self.exec(sql=sql, params=message.db_params)
 
     async def get_channel(self, channel_id: int) -> Any:
-        sql = 'SELECT * FROM channels WHERE channel_id=%s'
+        sql = 'SELECT * FROM channels WHERE channel_id=$1'
         row = await self.exec_query(sql=sql, params=[channel_id])
         if not row:
             return None
@@ -94,10 +93,10 @@ class TelegramStorage(PostgresStorage):
         sql = f'SELECT * FROM messages'
         params = []
         if channel_id:
-            sql += ' WHERE channel_id=%s'
+            sql += ' WHERE channel_id=$1'
             params = [channel_id]
         elif message_ids:
-            sql += ' WHERE message_id IN %s'
+            sql += ' WHERE message_id IN $1'
             params = [tuple(message_ids)]
         messages = []
         for row in await self.exec_query(sql=sql, params=params):
