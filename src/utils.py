@@ -7,8 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE_URL = 'https://tlgrm.ru/channels/'
-CHANNELS_URLS_FILE = pathlib.Path(__file__).parent.parent.absolute() + 'channels.json'
-CHANNELS_TYPES_FILE = pathlib.Path(__file__).parent.parent.absolute() + 'channels_types.json'
+CHANNELS_URLS_FILE = pathlib.Path(__file__).parent.parent.absolute() / 'channels.json'
+CHANNELS_TYPES_FILE = pathlib.Path(__file__).parent.parent.absolute() / 'channels_types.json'
 
 
 class ChannelType:
