@@ -15,7 +15,7 @@ Service providing loading messages from telegram channels to PostgreSQL DB.
 ## Tracking channels
 
 There are 2 ways to set the list of tracking channels:
-- set channels types in channels_types.json file - service will automatically take the 24 most popular channels on the specified types from the [this site](tlgrm.ru/channels) and start monitoring them
+- set channels types in channels_types.json file - service will automatically take the 24 most popular channels on the specified types from the [this site](https://tlgrm.ru/channels) and start monitoring them
 - set CUSTOM_CHANNELS_URLS env in env.cfg file and edit channels.json file - service will only monitor the specified channels  
 
 Table of channel types are specified below:
