@@ -97,4 +97,5 @@ def get_channels(use_custom_channels: bool) -> List[dict]:
 async def register_client(session_name: str, api_id: int, api_hash: str):
     client = TelegramClient(session_name, api_id, api_hash)
     await client.start()
+    await client.disconnect()
     logging.info('Successfully register client')
