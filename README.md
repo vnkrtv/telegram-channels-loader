@@ -10,7 +10,7 @@ Service providing loading messages from telegram channels to PostgreSQL DB.
 - ```docker build -t tg-channels-loader .```
 - Set params in env.cfg file
 - Set tracking channels list (more details are described below) 
-- ```docker run --env-file env.cfg --name tg-loader -d tg-channels-loader```
+- ```sudo docker run --name tg-loader -i --env-file env.cfg tg-loader``` - to authorize the client, it is **important to run container in the interactive mode**. After auth container can be stopped by Ctrl + C and started again in detach mode
 
 ## Tracking channels
 

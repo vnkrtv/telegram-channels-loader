@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 from typing import List
 
 from telethon import TelegramClient
@@ -15,6 +16,7 @@ class TelegramLoader:
     db: TelegramStorage
     channels: List[Channel]
     timeout: float
+    first_load: bool
 
     def __init__(self,
                  db: TelegramStorage,
@@ -26,6 +28,7 @@ class TelegramLoader:
         self.timeout = timeout
         self.client = TelegramClient(session_name, api_id, api_hash)
         self.channels = []
+        self.first_load = True
 
     async def run_client(self):
         await self.client.start()
@@ -46,6 +49,7 @@ class TelegramLoader:
             await self.db.add_channel(channel)
             logging.info('Loaded %s(%s) channel info' % (channel.name, channel.link))
             self.channels.append(channel)
+            await asyncio.sleep(1 + random.random() * 2)
 
     async def start_loading(self, total_count_limit: int):
         self.client.loop.run_until_complete(self.__start_loading(total_count_limit=total_count_limit))
@@ -54,12 +58,16 @@ class TelegramLoader:
         while True:
             await self.load_all_channels_messages(total_count_limit)
             await asyncio.sleep(self.timeout)
+            self.first_load = False
 
     async def load_channel_messages(self, channel: Channel, total_count_limit: int):
         offset_msg = 0    # номер записи, с которой начинается считывание
         limit_msg = 100   # максимальное число записей, передаваемых за один раз
 
         all_messages = []   # список всех сообщений
+
+        if not self.first_load:
+            total_count_limit = 100
 
         while True:
             history = await self.client(GetHistoryRequest(
