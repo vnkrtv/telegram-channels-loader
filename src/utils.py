@@ -5,6 +5,7 @@ import pathlib
 
 import requests
 from bs4 import BeautifulSoup
+from telethon import TelegramClient
 
 BASE_URL = 'https://tlgrm.ru/channels/'
 CHANNELS_URLS_FILE = pathlib.Path(__file__).parent.parent.absolute() / 'channels.json'
@@ -93,7 +94,7 @@ def get_channels(use_custom_channels: bool) -> List[dict]:
     return channels
 
 
-def set_logging_level(level: int = logging.INFO):
-    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-    for logger in loggers:
-        logger.setLevel(level)
+async def register_client(session_name: str, api_id: int, api_hash: str):
+    client = TelegramClient(session_name, api_id, api_hash)
+    await client.start()
+    logging.info('Successfully register client')
