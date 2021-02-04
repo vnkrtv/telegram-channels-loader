@@ -85,6 +85,7 @@ class TelegramLoader:
             total_messages = len(all_messages)
             if total_count_limit != 0 and total_messages >= total_count_limit:
                 break
+            await asyncio.sleep(1 + random.random() * 2)
         for message_dict in all_messages:
             message = Message.from_dict(message_dict, channel.channel_id)
             await self.db.add_message(message)
