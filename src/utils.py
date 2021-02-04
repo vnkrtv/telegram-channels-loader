@@ -73,13 +73,15 @@ def load_channels(ref: str, ch_type: str) -> List[dict]:
 
 
 def load_channels_by_types(types_list: List[str]) -> List[dict]:
-    all_channels = []
+    all_channels = {}
     for ch_type in types_list:
         channels = load_channels(get_ref(ch_type), ch_type)
         for ch in channels:
-            if ch not in all_channels:
-                all_channels.append(ch)
-    return all_channels
+            if ch['name'] not in all_channels:
+                all_channels[ch['name']] = ch
+            else:
+                all_channels[ch['name']]['type'] += f' {ch_type}'
+    return list(all_channels.values())
 
 
 def get_channels(use_custom_channels: bool) -> List[dict]:
