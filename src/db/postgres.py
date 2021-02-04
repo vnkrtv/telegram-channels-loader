@@ -45,7 +45,7 @@ class PostgresStorage:
 
 class TelegramStorage(PostgresStorage):
     """
-    Class for working with Telegram
+    Class for working with Telegram data stored in PostgreSQL
     """
 
     async def create_schema(self):
@@ -93,7 +93,7 @@ class TelegramStorage(PostgresStorage):
             channel_type=row[5])
         return channel
 
-    async def get_messages(self, channel_id: int = 0, message_ids: list = None) -> list:
+    async def get_messages(self, channel_id: int = 0, message_ids: List[int] = None) -> List[Message]:
         sql = f'SELECT * FROM messages'
         params = []
         if channel_id:

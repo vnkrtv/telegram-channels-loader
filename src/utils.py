@@ -81,8 +81,8 @@ def load_channels_by_types(types_list: List[str]) -> List[dict]:
     return all_channels
 
 
-def get_channels(custom_channels: bool) -> List[dict]:
-    if custom_channels:
+def get_channels(use_custom_channels: bool) -> List[dict]:
+    if use_custom_channels:
         with open(CHANNELS_URLS_FILE, 'r') as f:
             channels = json.load(f)
     else:
@@ -91,3 +91,9 @@ def get_channels(custom_channels: bool) -> List[dict]:
         channels = load_channels_by_types(types_list)
     logging.info('Got %d channels' % len(channels))
     return channels
+
+
+def set_logging_level(level: int = logging.INFO):
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    for logger in loggers:
+        logger.setLevel(level)

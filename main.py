@@ -1,10 +1,10 @@
 import os
-import json
 import asyncio
+import logging
 
 import nest_asyncio
 
-from src import TelegramLoader, TelegramStorage, get_channels
+from src import TelegramLoader, TelegramStorage, get_channels, set_logging_level
 
 SESSION_NAME = os.getenv('SESSION_NAME', 'tg_grabber')
 API_ID = int(os.getenv('API_ID', 0))
@@ -40,6 +40,7 @@ async def main():
 
 
 if __name__ == '__main__':
+    set_logging_level(logging.INFO)
     nest_asyncio.apply()
     loop = asyncio.new_event_loop()
     loop.run_until_complete(main())

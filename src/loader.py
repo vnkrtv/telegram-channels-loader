@@ -30,7 +30,7 @@ class TelegramLoader:
     async def run_client(self):
         await self.client.start()
 
-    async def add_channels(self, channels: List[str]):
+    async def add_channels(self, channels: List[dict]):
         self.client.loop.run_until_complete(self.__add_channels(channels))
 
     async def __add_channels(self, channels: List[dict]):
